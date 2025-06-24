@@ -1,0 +1,18 @@
+Given I navigate to "https://business-innovation-9719-dev-ed.scratch.my.salesforce.com/"
+And I type "engleong.lee@theaccessgroup.com.automation" to Username field
+And I type "Access123" to Password field
+And I click on "Log In to Sandbox" button
+Then I should verify "Access Practice Ma" is displayed
+Then I should verify "Recently Viewed" is displayed
+Given I click on "New" button
+Then I should verify "New Client" is displayed
+And I click on "Next" button
+Then I should verify "New Client: Individual" is displayed
+And I type "My Last Name" on Last Name field
+And I type "test@gmail.com" on Email field
+And I type "Client Name2" on Client Name field
+And I type "Petronas" on "Search Practice Details..." field
+And I click on "Search Practice Details..." field
+And I click "<strong>Petronas</strong>"
+And I click "Save"
+And I should verify "Client "My Last Name" was created." is displayed

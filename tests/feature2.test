@@ -1,0 +1,12 @@
+Given I navigate to "https://qa-handitaxcloud.handisoft.com.au/"
+And I click on "Login" button
+Then I should verify "Sign in" is displayed
+Given I type "htcqasuperuser02@mailinator.com" to E-mail address field
+And I click on "Next" button
+Then I should verify "Enter password" is displayed
+Given I type "Access2022" to password field
+Then I click on "Sign in" button
+And I verify "John Ebner" is displayed
+Given I click on "John Ebner" to expand the dropdown
+And I click on "Logout"
+Then I should verify "Login" is displayed

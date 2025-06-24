@@ -1,0 +1,6 @@
+Given I navigate to "https://business-innovation-9719-dev-ed.scratch.my.salesforce.com/"
+And I type "engleong.lee@theaccessgroup.com.automation" to Username field
+And I type "Access123" to Password field
+And I click on "Log In to Sandbox" button
+Then I should verify "Access Practice Ma" is displayed
+Then I should verify "Recently Viewed" is displayed

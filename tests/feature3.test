@@ -1,0 +1,19 @@
+Given I navigate to "https://qa-handitaxcloud.handisoft.com.au/"
+And I click on "Login" button
+Then I should verify "Sign in" is displayed
+And I type "htcqasuperuser02@mailinator.com" to E-mail address field
+And I click on "Next" button
+Then I should verify "Enter password" is displayed
+Given I type "Access2022" to password field
+Then I click on "Sign in" button
+And I verify "New Client" is displayed
+Given I click on "New Client" button
+Then I verify "New Client" is displayed
+And I verify "Save and New Tax Form" is displayed
+Given I click on "Client Type" 
+And I click on "Fund"
+And I type "Access Group" to Business Name field
+And I type "Alternate Name" to Alternate Name field
+And I fill in "571122464" to TFN field
+And I click on "Save" button
+Then I should verify "No data to display" is displayed

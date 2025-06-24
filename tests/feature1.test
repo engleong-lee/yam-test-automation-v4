@@ -1,0 +1,6 @@
+Given I navigate to "https://beta.unleashedsoftware.com/v2/
+When I fill in "liekchieng.yam@theaccessgroup.com" to email field
+Then I click on "Next" button
+When I fill in "Unleashed01" to password field
+and I click on "Log in" button
+Then I verify that "Dashboard" page is loaded
