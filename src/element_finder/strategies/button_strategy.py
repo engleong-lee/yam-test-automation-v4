@@ -22,6 +22,8 @@ class ButtonStrategy(ElementFinderStrategy):
         return [
             ('button, input[type="button"], input[type="submit"]', 'native buttons'),
             ('div[role="button"], a[role="button"], span[role="button"]', 'role-based buttons'),
+            ('a[class*="button"], a[class*="btn"]', 'link buttons'),
+            ('[class*="button"]:not([class*="container"]):not([class*="wrapper"]), [class*="btn"]:not([class*="container"]):not([class*="wrapper"])', 'styled buttons'),
             ('[onclick], [tabindex]', 'clickable elements'),
         ]
     

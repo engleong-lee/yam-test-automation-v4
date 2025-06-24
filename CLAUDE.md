@@ -21,16 +21,16 @@ pip install -r requirements.txt
 
 ### Running Tests
 ```bash
-python src/simple_test_automation.py
+python src/enhanced_test_automation.py
 ```
 
 ## Code Architecture
 
-This is a Playwright-based web test automation framework built around a single class `SimpleTestAutomation` that executes BDD-style test steps.
+This is a Playwright-based web test automation framework built around a single class `EnhancedTestAutomation` that executes BDD-style test steps.
 
 ### Core Components
 
-**SimpleTestAutomation Class** (`src/simple_test_automation.py`)
+**EnhancedTestAutomation Class** (`src/enhanced_test_automation.py`)
 - Main automation engine that parses and executes natural language test steps
 - Uses Playwright for browser automation with Chromium
 - Supports headless/headed modes and configurable slow motion timing
