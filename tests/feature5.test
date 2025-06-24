@@ -13,6 +13,6 @@ And I type "test@gmail.com" on Email field
 And I type "Client Name2" on Client Name field
 And I type "Petronas" on "Search Practice Details..." field
 And I click on "Search Practice Details..." field
-And I click "<strong>Petronas</strong>"
+And I click "Petronas" but not "Show more"
 And I click "Save"
 And I should verify "Client "My Last Name" was created." is displayed

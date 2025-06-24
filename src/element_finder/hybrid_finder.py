@@ -193,6 +193,148 @@ class HybridElementFinder:
             
             return None
     
+    def find_element_excluding(self, page: Page, target_description: str, exclusion_description: str, timeout: int = 30000, retry_attempts: int = 5) -> Optional[ElementHandle]:
+        """
+        Find element containing target text but excluding elements with exclusion text
+        
+        Args:
+            page: Playwright page object
+            target_description: Text to search for
+            exclusion_description: Text to exclude from matches
+            timeout: Maximum time to spend searching (ms)
+            retry_attempts: Number of retry attempts for dynamic content
+            
+        Returns:
+            ElementHandle if found, None otherwise
+        """
+        start_time = time.time()
+        self.performance_stats['total_searches'] += 1
+        
+        # Normalize descriptions
+        target_description = target_description.lower().strip('"')
+        exclusion_description = exclusion_description.lower().strip('"')
+        key_words = self._extract_key_words(target_description)
+        
+        # Create context
+        context = FinderContext(
+            page=page,
+            description=target_description,
+            original_description=target_description,
+            key_words=key_words,
+            timeout=timeout,
+            retry_attempts=retry_attempts,
+            enable_dynamic_discovery=self.enable_auto_discovery,
+            cache_enabled=self.cache is not None,
+            debug=self.debug
+        )
+        
+        if self.debug:
+            print(f"🔍 HybridFinder: Searching for '{target_description}' excluding '{exclusion_description}'")
+        
+        # Phase 1: Wait for initial page stability
+        self._wait_for_page_stability(context)
+        
+        # Phase 2: Try strategies in priority order with exclusion filtering
+        best_match = None
+        
+        for attempt in range(retry_attempts):
+            if self.debug:
+                print(f"  → Attempt {attempt + 1}/{retry_attempts}")
+            
+            # Get applicable strategies for this context
+            applicable_strategies = [s for s in self.strategies if s.can_handle(context)]
+            
+            if self.debug:
+                strategy_names = [s.name for s in applicable_strategies]
+                print(f"  → Using strategies: {strategy_names}")
+            
+            # Try each applicable strategy
+            for strategy in applicable_strategies:
+                strategy_start = time.time()
+                
+                try:
+                    matches = strategy.find_elements(context)
+                    strategy_time = time.time() - strategy_start
+                    
+                    if matches:
+                        # Filter out matches containing exclusion text
+                        filtered_matches = []
+                        for match in matches:
+                            element_text = strategy.extract_element_text(match.element, context)
+                            if element_text and exclusion_description not in element_text.lower():
+                                filtered_matches.append(match)
+                            elif self.debug:
+                                print(f"  → Filtered out: '{element_text}' (contains exclusion text)")
+                        
+                        if filtered_matches:
+                            # Sort matches by score (highest first)
+                            filtered_matches.sort(key=lambda m: m.score, reverse=True)
+                            top_match = filtered_matches[0]
+                            
+                            if self.debug:
+                                print(f"  → {strategy.name}: Found {len(filtered_matches)} filtered matches, best score: {top_match.score:.2f} ({strategy_time*1000:.1f}ms)")
+                            
+                            # Update strategy performance tracking
+                            self._update_strategy_stats(strategy.name, strategy_time, True)
+                            
+                            # Check if this is our best match so far
+                            if best_match is None or top_match.score > best_match.score:
+                                best_match = top_match
+                            
+                            # Early termination for high-confidence matches
+                            if top_match.score >= 0.9:
+                                if self.debug:
+                                    print(f"  → High confidence match found, stopping search")
+                                break
+                        else:
+                            if self.debug:
+                                print(f"  → {strategy.name}: All matches filtered out by exclusion")
+                            self._update_strategy_stats(strategy.name, strategy_time, False)
+                    else:
+                        self._update_strategy_stats(strategy.name, strategy_time, False)
+                        
+                except Exception as e:
+                    strategy_time = time.time() - strategy_start
+                    self._update_strategy_stats(strategy.name, strategy_time, False)
+                    if self.debug:
+                        print(f"  → {strategy.name} failed: {e}")
+            
+            # If we found a good match, use it
+            if best_match and best_match.score >= 0.5:
+                break
+            
+            # Wait before retry (if not last attempt)
+            if attempt < retry_attempts - 1:
+                wait_time = min(2 ** attempt, 5)  # Exponential backoff, max 5s
+                if self.debug:
+                    print(f"  → Waiting {wait_time}s before retry...")
+                time.sleep(wait_time)
+                
+                # Re-check page stability
+                self._wait_for_page_stability(context)
+        
+        # Phase 3: Process results
+        search_time = time.time() - start_time
+        
+        if best_match:
+            self._update_performance_stats(best_match.strategy_name, search_time, True)
+            
+            if self.debug:
+                print(f"✓ Found element using {best_match.strategy_name} with exclusion")
+                print(f"  → Score: {best_match.score:.2f}")
+                print(f"  → Matched by: {best_match.matched_by}")
+                print(f"  → Matched text: '{best_match.matched_text}'")
+                print(f"  → Total time: {search_time*1000:.1f}ms")
+            
+            return best_match.element
+        else:
+            self._update_performance_stats('none', search_time, False)
+            
+            if self.debug:
+                print(f"✗ No element found with exclusion after {search_time:.2f}s")
+            
+            return None
+    
     def _try_cache(self, context: FinderContext) -> Optional[ElementHandle]:
         """Try to find element using cache"""
         if not self.cache:

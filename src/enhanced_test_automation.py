@@ -72,8 +72,14 @@ For each step, return a tuple with the action type and parameters:
 - navigate: ("navigate", "url")
 - fill: ("fill", "value", "field_description") 
 - click: ("click", "element_description")
+- click_excluding: ("click_excluding", "target_text", "exclusion_text") - for clicks with exclusions like "click X but not Y"
 - verify: ("verify", "text_to_verify")
 - should_verify: ("should_verify", "text_to_verify")
+
+Special patterns to recognize:
+- "click X but not Y" → ("click_excluding", "X", "Y")
+- "click X excluding Y" → ("click_excluding", "X", "Y")  
+- "click X except Y" → ("click_excluding", "X", "Y")
 
 Input steps:
 {chr(10).join(f"{i+1}. {step}" for i, step in enumerate(test_steps))}
@@ -83,6 +89,7 @@ Return only a valid JSON array of tuples, no other text. Example format:
   ["navigate", "https://example.com"],
   ["fill", "user@example.com", "email field"],
   ["click", "login button"],
+  ["click_excluding", "Save", "Save as"],
   ["should_verify", "Sign in"],
   ["verify", "Dashboard"]
 ]
@@ -136,6 +143,40 @@ Parse the steps above:"""
         if element:
             if self.debug:
                 print(f"✓ Found element in {search_time*1000:.1f}ms")
+        else:
+            if self.debug:
+                print(f"✗ Element not found after {search_time:.2f}s")
+        
+        return element
+    
+    def find_element_excluding(self, target_text, exclusion_text):
+        """
+        Find element containing target_text but excluding exclusion_text
+        
+        This method finds elements using hybrid approach then filters out
+        elements that contain the exclusion text.
+        """
+        start_time = time.time()
+        self.test_performance['total_element_searches'] += 1
+        
+        if self.debug:
+            print(f"🔍 Enhanced: Finding element '{target_text}' excluding '{exclusion_text}'")
+        
+        # Use the hybrid element finder with exclusion
+        element = self.element_finder.find_element_excluding(
+            page=self.page,
+            target_description=target_text,
+            exclusion_description=exclusion_text,
+            timeout=30000,
+            retry_attempts=5
+        )
+        
+        search_time = time.time() - start_time
+        self.test_performance['total_search_time'] += search_time
+        
+        if element:
+            if self.debug:
+                print(f"✓ Found element excluding unwanted matches in {search_time*1000:.1f}ms")
         else:
             if self.debug:
                 print(f"✗ Element not found after {search_time:.2f}s")
@@ -197,11 +238,19 @@ Parse the steps above:"""
                     self._record_failed_step(action, field_description)
                     return False
             
-            elif action == 'click':
-                element_description = parsed_action[1]
-                print(f"Clicking on: {element_description}")
+            elif action == 'click' or action == 'click_excluding':
+                if action == 'click':
+                    element_description = parsed_action[1]
+                    print(f"Clicking on: {element_description}")
+                    element = self.find_element(element_description)
+                    description_for_debug = element_description
+                else:  # click_excluding
+                    target_text = parsed_action[1]
+                    exclusion_text = parsed_action[2]
+                    print(f"Clicking on: {target_text} (excluding: {exclusion_text})")
+                    element = self.find_element_excluding(target_text, exclusion_text)
+                    description_for_debug = f"{target_text} (excluding: {exclusion_text})"
                 
-                element = self.find_element(element_description)
                 if element:
                     # Enhanced click with better error handling
                     try:
@@ -236,7 +285,7 @@ Parse the steps above:"""
                         
                         # Capture HTML debug if enabled
                         if step_number is not None:
-                            self._capture_html_debug(step_number, action, element_description)
+                            self._capture_html_debug(step_number, action, description_for_debug)
                         
                         return True
                         
@@ -250,16 +299,16 @@ Parse the steps above:"""
                             
                             # Capture HTML debug if enabled
                             if step_number is not None:
-                                self._capture_html_debug(step_number, action, element_description)
+                                self._capture_html_debug(step_number, action, description_for_debug)
                             
                             return True
                         except Exception as js_error:
                             print(f"  → JavaScript click also failed: {js_error}")
-                            self._record_failed_step(action, element_description, str(click_error))
+                            self._record_failed_step(action, description_for_debug, str(click_error))
                             return False
                 else:
-                    print(f"Could not find element: {element_description}")
-                    self._record_failed_step(action, element_description)
+                    print(f"Could not find element: {description_for_debug}")
+                    self._record_failed_step(action, description_for_debug)
                     return False
             
             elif action == 'verify' or action == 'should_verify':
