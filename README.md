@@ -120,7 +120,7 @@ src/
 ## 💾 Caching System
 
 ### SmartCache Features
-- **Persistent Storage**: `.element_cache/` directory
+- **Persistent Storage**: `page_models/` directory
 - **Memory + Disk**: Hybrid approach for maximum performance
 - **Auto-Expiration**: 1 hour default, configurable
 - **URL Pattern Matching**: Works across similar pages
