@@ -29,6 +29,17 @@ HybridElementFinder (Main Orchestrator)
 
 ## 🚀 Quick Start
 
+### Prerequisites
+1. **Install Dependencies**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+2. **Set API Key**
+   ```bash
+   export ANTHROPIC_API_KEY=your_api_key_here
+   ```
+
 ### Drop-in Replacement
 Replace your existing automation with zero code changes:
 
